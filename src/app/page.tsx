@@ -9,10 +9,10 @@ export default function Home() {
       <main className="container mx-auto px-4 py-12 md:py-20">
         <header className="text-center mb-16">
           <h1 className="font-headline text-4xl md:text-6xl font-bold text-primary mb-3">
-            SEO Dynamic King
+            Demo: SEO Automation with Google API
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-            A modern solution for dynamically generating essential SEO files in Next.js using App Router and Middleware.
+            A technical demonstration of how to automate SEO tasks—like site verification and sitemap submission—using Google's APIs in a Next.js application.
           </p>
         </header>
 
@@ -33,10 +33,10 @@ export default function Home() {
           />
           <FeatureCard
             icon={<CheckCircle className="w-8 h-8 text-primary" />}
-            title="Google Verification"
-            description="Handles Google's site verification by serving the required HTML file from a dynamic route. Test with a sample below or automate the process."
+            title="Automated Google Verification"
+            description="A proof-of-concept for automating the entire Google verification and registration flow. Click the button below to trigger the test process."
             link="/google123abc.html"
-            linkText="Test /google123abc.html"
+            linkText="Test Static Verification"
           >
             {/* Add the verification button here */}
             <VerificationButton />
