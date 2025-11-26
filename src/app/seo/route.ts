@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
   }
 
   // Google Site Verification from Database
-  const googleMatch = pathname.match(/^\/google([a-zA-Z0-9_-]+)\.html$/);
-  if (googleMatch) {
-    const token = googleMatch[1]; // Extract token from the URL
-    
+  const match = pathname.match(/^\/([a-zA-Z0-9_-]+)\.html$/);
+  if (match) {
+    const token = match[1]; // Extract token from the URL
+
     if (!token) {
       return new NextResponse("Invalid token in filename", { status: 400 });
     }
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         headers: { "Content-Type": "text/html" },
       });
     }
-    
+
     console.warn(`[SEO Route] Verification file not found for token: ${token}`);
     return new NextResponse("Not Found", { status: 404 });
   }
