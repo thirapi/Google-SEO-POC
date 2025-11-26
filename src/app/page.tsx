@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, FileCode, CheckCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { VerificationButton } from "@/components/ui/verification-button"; // Import the new component
 
 export default function Home() {
   return (
@@ -33,10 +34,13 @@ export default function Home() {
           <FeatureCard
             icon={<CheckCircle className="w-8 h-8 text-primary" />}
             title="Google Verification"
-            description="Handles Google's site verification by serving the required HTML file from a dynamic route. Test with a sample."
+            description="Handles Google's site verification by serving the required HTML file from a dynamic route. Test with a sample below or automate the process."
             link="/google123abc.html"
-            linkText="View /google123abc.html"
-          />
+            linkText="Test /google123abc.html"
+          >
+            {/* Add the verification button here */}
+            <VerificationButton />
+          </FeatureCard>
         </div>
 
         <footer className="text-center mt-20 text-muted-foreground">
@@ -53,26 +57,29 @@ interface FeatureCardProps {
   description: string;
   link: string;
   linkText: string;
+  children?: React.ReactNode; // Allow children to be passed
 }
 
-function FeatureCard({ icon, title, description, link, linkText }: FeatureCardProps) {
+function FeatureCard({ icon, title, description, link, linkText, children }: FeatureCardProps) {
   return (
-    <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-border/50">
+    <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-border/50 flex flex-col">
       <CardHeader className="flex flex-row items-center gap-4 pb-4">
         <div className="bg-primary/10 p-4 rounded-lg">{icon}</div>
         <CardTitle className="text-xl font-headline text-primary">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col h-full">
+      <CardContent className="flex flex-col flex-grow h-full">
         <p className="text-muted-foreground mb-4 flex-grow">{description}</p>
         <Link
           href={link}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-semibold text-accent hover:underline inline-flex items-center group"
+          className="font-semibold text-accent hover:underline inline-flex items-center group mb-4"
         >
           {linkText}
           <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
         </Link>
+        {/* Render children below the link */}
+        {children}
       </CardContent>
     </Card>
   );

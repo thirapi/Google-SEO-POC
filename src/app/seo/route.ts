@@ -1,24 +1,22 @@
 // src/app/seo/route.ts
-import { type NextRequest } from 'next/server'
+import { type NextRequest } from 'next/server';
+import { verificationCache } from '@/lib/verification-cache';
 
 // Function to get the base URL from the request
 function getBaseUrl(req: NextRequest): string {
     const host = req.headers.get('host');
-    if (!host) {
-        return 'http://localhost:9003';
-    }
-    const protocol = host.startsWith('localhost') ? 'http' : 'https';
-    return `${protocol}://${host}`;
+    // Use NEXT_PUBLIC_SITE_URL as the primary source if available
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || (host ? `${host.startsWith('localhost') ? 'http' : 'https'}://${host}` : 'http://localhost:9003');
+    return baseUrl;
 }
 
 export async function GET(request: NextRequest) {
-  const { pathname } = request.nextUrl; // ✅ gunakan pathname asli
+  const { pathname } = request.nextUrl;
   const baseUrl = getBaseUrl(request);
-
-  console.log('[SEO ROUTE] pathname:', pathname);
 
   // Sitemap
   if (pathname === '/sitemap.xml') {
+    // In a real app, you would fetch these from a CMS or generate them
     const staticUrls = ['', '/about', '/services', '/contact'];
 
     const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -40,11 +38,7 @@ export async function GET(request: NextRequest) {
 
   // Robots
   if (pathname === '/robots.txt') {
-    const robotsContent = `User-agent: *
-Allow: /
-
-Sitemap: ${baseUrl}/sitemap.xml
-`;
+    const robotsContent = `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
     return new Response(robotsContent, {
       status: 200,
       headers: { 'Content-Type': 'text/plain' },
@@ -53,8 +47,21 @@ Sitemap: ${baseUrl}/sitemap.xml
 
   // Google Site Verification
   const googleMatch = pathname.match(/^\/google([a-zA-Z0-9_-]+)\.html$/);
-  if (googleMatch) { 
-    const fileName = pathname.slice(1); // ambil nama file
+  if (googleMatch) {
+    const fileName = pathname.slice(1);
+    const cachedToken = verificationCache.get();
+
+    // Check if the request is for the dynamically generated token
+    if (cachedToken && cachedToken.fileName === fileName) {
+      console.log(`[SEO Route] Serving cached verification file: ${fileName}`);
+      return new Response(cachedToken.fileContent, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
+      });
+    }
+
+    // Fallback for the demo link on the homepage
+    console.log(`[SEO Route] Serving fallback verification file: ${fileName}`);
     const htmlContent = `<html><head><title></title></head><body>google-site-verification: ${fileName}</body></html>`;
     return new Response(htmlContent, {
       status: 200,
