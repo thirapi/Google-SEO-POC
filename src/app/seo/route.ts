@@ -1,13 +1,14 @@
 // src/app/seo/route.ts
-import { type NextRequest } from 'next/server';
-import { verificationCache } from '@/lib/verification-cache';
+import { type NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { domainVerificationTable } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 // Function to get the base URL from the request
 function getBaseUrl(req: NextRequest): string {
-    const host = req.headers.get('host');
-    // Use NEXT_PUBLIC_SITE_URL as the primary source if available
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || (host ? `${host.startsWith('localhost') ? 'http' : 'https'}://${host}` : 'http://localhost:9003');
-    return baseUrl;
+  const host = req.headers.get("host");
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || (host ? `${host.startsWith("localhost") ? "http" : "https"}://${host}` : "http://localhost:9003");
+  return baseUrl;
 }
 
 export async function GET(request: NextRequest) {
@@ -15,60 +16,63 @@ export async function GET(request: NextRequest) {
   const baseUrl = getBaseUrl(request);
 
   // Sitemap
-  if (pathname === '/sitemap.xml') {
-    // In a real app, you would fetch these from a CMS or generate them
-    const staticUrls = ['', '/about', '/services', '/contact'];
-
+  if (pathname === "/sitemap.xml") {
     const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${staticUrls.map((path) => `
   <url>
-    <loc>${baseUrl}${path}</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>`).join('')}
+    <loc>${baseUrl}</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+  </url>
 </urlset>`;
-
-    return new Response(sitemapContent.trim(), {
-      status: 200,
-      headers: { 'Content-Type': 'application/xml' },
+    return new NextResponse(sitemapContent, {
+      headers: { "Content-Type": "application/xml" },
     });
   }
 
   // Robots
-  if (pathname === '/robots.txt') {
-    const robotsContent = `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
-    return new Response(robotsContent, {
-      status: 200,
-      headers: { 'Content-Type': 'text/plain' },
+  if (pathname === "/robots.txt") {
+    const robotsContent = `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml`;
+    return new NextResponse(robotsContent, {
+      headers: { "Content-Type": "text/plain" },
     });
   }
 
-  // Google Site Verification
+  // Google Site Verification from Database
   const googleMatch = pathname.match(/^\/google([a-zA-Z0-9_-]+)\.html$/);
   if (googleMatch) {
-    const fileName = pathname.slice(1);
-    const cachedToken = verificationCache.get();
-
-    // Check if the request is for the dynamically generated token
-    if (cachedToken && cachedToken.fileName === fileName) {
-      console.log(`[SEO Route] Serving cached verification file: ${fileName}`);
-      return new Response(cachedToken.fileContent, {
-        status: 200,
-        headers: { 'Content-Type': 'text/html' },
-      });
+    const token = googleMatch[1]; // Extract token from the URL
+    
+    if (!token) {
+      return new NextResponse("Invalid token in filename", { status: 400 });
     }
 
-    // Fallback for the demo link on the homepage
-    console.log(`[SEO Route] Serving fallback verification file: ${fileName}`);
-    const htmlContent = `<html><head><title></title></head><body>google-site-verification: ${fileName}</body></html>`;
-    return new Response(htmlContent, {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' },
-    });
+    try {
+      const verificationRecord = await db.query.domainVerificationTable.findFirst({
+        where: eq(domainVerificationTable.token, token),
+        orderBy: (table, { desc }) => desc(table.created_at), // Get the latest one
+      });
+
+      if (verificationRecord) {
+        return new NextResponse(verificationRecord.content, {
+          headers: { "Content-Type": "text/html" },
+        });
+      }
+    } catch (error) {
+      console.error("[SEO Route] Database query failed:", error);
+      return new NextResponse("Internal Server Error", { status: 500 });
+    }
+
+    // Fallback for the demo link on the homepage if not found in DB
+    if (pathname === "/google123abc.html") {
+      return new NextResponse("google-site-verification: google123abc.html", {
+        headers: { "Content-Type": "text/html" },
+      });
+    }
+    
+    console.warn(`[SEO Route] Verification file not found for token: ${token}`);
+    return new NextResponse("Not Found", { status: 404 });
   }
 
-  // Default: 404
-  return new Response('Not Found from seo', { status: 404 });
+  // Default: 404 Not Found
+  return new NextResponse("Not Found from seo", { status: 404 });
 }
