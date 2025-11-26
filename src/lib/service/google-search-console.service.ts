@@ -67,4 +67,29 @@ export class GoogleSearchConsoleService implements IGoogleSearchConsoleService {
 
     console.log(`Sitemap submitted: ${feedUrl}`);
   }
+
+  async getSeoData(siteUrl: string, startDate: string, endDate: string): Promise<any> {
+    const accessToken = await this.getAccessToken();
+
+    const res = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        startDate,
+        endDate,
+        dimensions: ["query"],
+        searchType: "web",
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to get SEO data: ${res.status} ${text}`);
+    }
+
+    return res.json();
+  }
 }

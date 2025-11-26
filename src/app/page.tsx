@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, FileCode, CheckCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { VerificationButton } from "@/components/ui/verification-button"; // Import the new component
+import { SeoDashboard } from "@/components/ui/seo-dashboard";
 
 export default function Home() {
   return (
@@ -41,6 +42,17 @@ export default function Home() {
             {/* Add the verification button here */}
             <VerificationButton />
           </FeatureCard>
+        </div>
+
+        <div className="max-w-6xl mx-auto mt-8">
+            <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-border/50 flex flex-col">
+                <CardHeader>
+                    <CardTitle>SEO Dashboard</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <SeoDashboard />
+                </CardContent>
+            </Card>
         </div>
 
         <footer className="text-center mt-20 text-muted-foreground">
